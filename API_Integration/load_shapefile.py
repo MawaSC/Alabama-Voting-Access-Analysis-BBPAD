@@ -432,23 +432,13 @@ def get_nearest_poll(user_input):
         "race_breakdown": race_data
     }
 
-# =========================
-# ===== ADD: TEST INPUT =====
-# =========================
+# Test Input
 
 print(get_nearest_poll("Whitfield Community Center"))
 print(get_nearest_poll("36104 Montgomery AL"))
 
-# =========================
-# EXPORTS
-# =========================
+# Export
 
-"""
-tract_centroids.drop(columns=["geometry"]).to_csv(
-    "final_polling_access_table.csv",
-    index=False
-)
-"""
 
 final_gdf = gpd.GeoDataFrame(
     tract_centroids,
@@ -477,7 +467,7 @@ results = [
     get_nearest_poll("Jackson Hospital")
 ]
 
-# Convert numpy floats → normal floats (IMPORTANT)
+# Convert numpy floats to normal floats
 def clean_result(r):
     return {
         k: float(v) if hasattr(v, "item") else v
@@ -486,7 +476,7 @@ def clean_result(r):
 
 results_clean = [clean_result(r) for r in results]
 
-#Save sample API outputs to JSON.
+# Save sample API outputs to JSON.
 # This file can later be consumed directly by a frontend application.
 
 with open("polling_api_output.json", "w") as f:
@@ -513,11 +503,20 @@ plt.savefig("distance_distribution.png")
 plt.show()
 
 # Access levels
-plt.figure()
+plt.figure(figsize=(8,5))
 final_df["Access_Level"].value_counts().plot(kind="bar")
 plt.title("Polling Access Levels")
 plt.xlabel("Access Level")
 plt.ylabel("Number of Tracts")
+plt.xticks(fontsize=9)
+plt.xticks(rotation=20)
+plt.tight_layout()
+
+plt.savefig(
+    "access_levels.png",
+    dpi=300,
+    bbox_inches="tight"
+)
 plt.savefig("access_levels.png")
 plt.show()
 
@@ -567,6 +566,34 @@ plt.axis("off")
 plt.savefig("black_population_map.png")
 
 plt.show()
+
+race_cols = {
+    "BLACK_x": "Black Population",
+    "WHITE_x": "White Population",
+    "HISP_x": "Hispanic Population",
+    "ASIAN_x": "Asian Population"
+}
+
+for col, title in race_cols.items():
+
+    plt.figure(figsize=(12,10))
+
+    tracts_plot.plot(
+        column=col,
+        cmap="Blues",
+        legend=True
+    )
+
+    plt.title(f"{title} by Census Tract")
+    plt.axis("off")
+
+    plt.savefig(
+        f"{col}_map.png",
+        dpi=300,
+        bbox_inches="tight"
+    )
+
+    plt.show()
 
 plt.figure()
 

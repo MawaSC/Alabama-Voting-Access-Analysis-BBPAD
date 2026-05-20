@@ -1765,6 +1765,266 @@ Between the five distance calculation methods, cross-comparison ratios provide i
 
 ---
 
+## API Integration & Polling Lookup System
+
+### Python Scripts
+
+#### `polling_access_analysis.py`
+
+**Purpose:**
+
+Computes polling place accessibility metrics for Montgomery County census tracts through spatial analysis and demographic integration. The script identifies nearest polling locations, measures tract-level accessibility, integrates demographic indicators, generates visualization outputs, and creates API-style polling lookup functionality for future dashboard or frontend integration.
+
+---
+
+### Core Analytical Workflow
+
+#### 1. Spatial Data Loading
+
+Loads:
+
+- Polling place shapefile (`Al_Polls_Flood_SLED.shp`)
+- Census tract polygons (`Alabama_Census_Tracts_2020.shp`)
+- Hospital infrastructure shapefile (`Hospitals.shp`)
+
+All datasets are validated and reprojected into:
+
+```
+EPSG:5070 (NAD83 / Conus Albers)
+```
+
+Projected coordinates are required because geographic latitude/longitude systems produce inaccurate distance calculations.
+
+---
+
+#### 2. Census Tract Centroid Generation
+
+Census tract polygons are converted into centroid points:
+
+```python
+tract_centroids["centroid"] = tract_centroids.geometry.centroid
+```
+
+Centroids serve as representative tract population locations for accessibility calculations.
+
+---
+
+#### 3. Polling Accessibility Computation
+
+For every census tract centroid:
+
+- Calculate nearest polling location
+- Compute Euclidean distance
+- Convert meters to miles
+- Attach nearest precinct metadata
+
+Outputs:
+
+| Variable | Description |
+|-----------|-------------|
+| nearest_poll_name | Closest polling location |
+| nearest_poll_address | Polling place address |
+| nearest_poll_city | Polling place city |
+| nearest_poll_miles | Distance to polling location |
+
+---
+
+#### 4. Infrastructure Accessibility Comparison
+
+Additional civic infrastructure accessibility metrics:
+
+- Distance to nearest hospital
+- Comparative accessibility relationships
+
+Output variable:
+
+| Variable | Description |
+|-----------|-------------|
+| nearest_hospital_distance_miles | Distance to nearest hospital |
+
+---
+
+#### 5. Demographic Integration
+
+Accessibility metrics are merged with Census demographics:
+
+Integrated variables:
+
+- Total population
+- Black population
+- White population
+- Hispanic population
+- Asian population
+- American Indian population
+- Native Hawaiian / Pacific Islander population
+- Multi-racial population
+
+Demographic integration enables equity-oriented accessibility assessment.
+
+---
+
+#### 6. Accessibility Classification
+
+Polling accessibility is categorized:
+
+| Distance Threshold | Category |
+|--------------------|-----------|
+| < 1 mile | Very Close |
+| 1–3 miles | Moderate |
+| 3–5 miles | Limited |
+| > 5 miles | Poor Access |
+
+Classification supports dashboard visualization and policy interpretation.
+
+---
+
+#### 7. User Query System
+
+Frontend/API-compatible lookup system:
+
+Example:
+
+```python
+get_nearest_poll("36104 Montgomery AL")
+```
+
+Accepts:
+
+- ZIP code
+- Address
+- Precinct name
+
+Returns:
+
+```json
+{
+ "nearest_polling_location": {},
+ "distance_miles": 0.82,
+ "access_level": "Very Close",
+ "census_tract": "01001020100",
+ "race_breakdown": {}
+}
+```
+
+Designed for future web application deployment.
+
+---
+
+### Raw Data Requirements
+
+Required directory structure:
+
+```
+data/
+└── raw/
+    ├── polling_places/
+    │   └── Al_Polls_Flood_SLED.shp
+    ├── Alabama_Census_Tracts_2020/
+    │   └── Alabama_Census_Tracts_2020.shp
+    └── Hospitals/
+        └── Hospitals.shp
+```
+
+If file paths differ, modify:
+
+```python
+file_path =
+gpd.read_file()
+```
+
+statements accordingly.
+
+Cross-platform path handling may alternatively use:
+
+```python
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+poll_path = BASE_DIR / "data" / "raw" / "polling_places"
+```
+
+This prevents hardcoded directory failures.
+
+---
+
+### Processed Outputs
+
+Generated outputs:
+
+| File | Description |
+|-------|-------------|
+| tract_polling_distances.csv | Census tract polling distances |
+| tract_polling_distances.geojson | Spatial accessibility output |
+| final_polling_access_table.csv | Final merged analytical table |
+| polling_api_output.json | API testing responses |
+
+---
+
+### Visualization Outputs
+
+Generated figures:
+
+| File | Description |
+|-------|-------------|
+| alabama_polling_access_map.png | Polling accessibility choropleth |
+| distance_distribution.png | Poll distance histogram |
+| access_levels.png | Accessibility category counts |
+| race_vs_distance_black.png | Black population vs polling distance |
+| race_vs_distance_hisp.png | Hispanic population vs polling distance |
+| black_population_map.png | Black population census tract map |
+| WHITE_x_map.png | White population map |
+| ASIAN_x_map.png | Asian population map |
+| HISP_x_map.png | Hispanic population map |
+| poll_vs_hospital.png | Polling access vs hospital access |
+
+---
+
+### Configuration Requirements
+
+Modify county filtering:
+
+```python
+polls_clean = polls_clean[
+    polls_clean["County"] == "Montgomery"
+]
+```
+
+Change Census county FIPS:
+
+```python
+tracts = tracts[
+    tracts["COUNTYFP20"] == "101"
+]
+```
+
+County FIPS updates allow expansion beyond Montgomery County.
+
+Examples:
+
+| County | FIPS |
+|---------|------|
+| Montgomery | 101 |
+| Dallas | 047 |
+| Perry | 105 |
+| Lowndes | 085 |
+
+---
+
+### Future Expansion Notes
+
+The accessibility framework was designed for county scalability.
+
+Future extensions may include:
+
+- Sidewalk network integration
+- School accessibility comparisons
+- Public transportation routing
+- Additional healthcare infrastructure layers
+- Multi-county Black Belt deployment
+- Network routing engines replacing Euclidean distance measurements
+- Frontend deployment of polling lookup API functionality
+
 ## License
 
 This project is produced for the Southern Poverty Law Center (SPLC) as a capstone project. All rights reserved.
